@@ -52,25 +52,54 @@ class InstragramBot:
                 continue
         return pic_hrefs
 
-        # write comment in area using a lambda function
-        def write_comment(self, comment_text):
-            try:
-                comment_button = lambda: self.driver.find_element_by_xpath("//span[@aria-label='Comment']")
-                comment_button.click()
 
+    # write comment in area using a lambda function
+    def write_comment(self, comment_text):
+        try:
+            comment_button = lambda: self.driver.find_element_by_xpath("//span[@aria-label='Comment']")
+            comment_button().click()
+            time.sleep(1)
+
+        except NoSuchElementException:
+            pass
+        
+        try:
+            comment_box_elem = lambda: self.driver.find_element_by_xpath("//textarea[@aria-label='Add a comment…']")
+            comment_box_elem().click()
+            time.sleep(1)
+            comment_box_elem().send_keys('')
+            comment_box_elem().clear()
+            time.sleep(1)
+            for letter in comment_text:
+                comment_box_elem().send_keys(letter)
+                time.sleep((random.randint(1,7)/30))
+
+            return comment_box_elem
+
+        except StaleElementReferenceException and NoSuchElementException as e:
+            print(e)
+            return False
+
+
+    def post_comment(self, comment_text):
+        time.sleep(random.randint(1,5))
+
+        comment_box_elem = self.write_comment(comment_text)
+        if comment_text in self.driver.page_source:
+            comment_box_elem().send_keys(Keys.ENTER)
+            try:
+                post_button = lambda: self.driver.find_element_by_xpath("//button[@type='Post']")
+                post_button().click()
+                print('clicked button')
             except NoSuchElementException:
                 pass
-            
-            try:
-                comment_box_elem = lambda: self.driver.find_element_by_xpath("//textarea[@aria-label='Add a comment...']")
-                comment_box_elem.send_keys('')
-                comment_box_elem.clear()
-                for letter in comment_text:
-                    comment_box_elem().send_keys(letter)
 
-            except StaleElementReferenceException and NoSuchElementException as e:
-                print(e)
-                return False
+        time.sleep(random.randint(4,6))
+        self.driver.refresh()
+        if comment_text in self.driver.page_source:
+            return True
+        return False
+
 
             
 
@@ -93,10 +122,14 @@ class InstragramBot:
 testIG = InstragramBot(os.getenv('IG_USERNAME'), os.getenv('IG_PASSWORD'))
 testIG.login()
 
-pictures_on_page = testIG.get_pics_on_page(hashtag='fitness', scrolls=3)[1:]
-print(pictures_on_page)
-
+# pictures_on_page = testIG.get_pics_on_page(hashtag='fitness', scrolls=3)[1:]
+# print(pictures_on_page)
+time.sleep(3)
 testIG.driver.get('https://www.instagram.com/p/B4sOh17glDf/')
+time.sleep(3)
+testIG.post_comment('sup')
+
+
 
 hashtags = ['crossfit', 'fitnessmotivation','miramar']
 
