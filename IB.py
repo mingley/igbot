@@ -36,32 +36,89 @@ class InstragramBot:
         password_element.send_keys(Keys.RETURN)
         time.sleep(3)
         
-    def like_photo(self, hashtag):
+    def get_pics_on_page(self, hashtag, scrolls=int):
         driver = self.driver
         driver.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
         time.sleep(2)
-        for i in range(1,3):
-            driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
-            time.sleep(2)
-
-        #searching for pic link
-        hrefs = driver.find_elements_by_tag_name('a')
-        pic_hrefs = [elem.get_attribute('href') for elem in hrefs]
-        pic_hrefs = [href for href in pic_hrefs if '/p/' in href]
-        print(hashtag + ' photos: ' + str(len(pic_hrefs)))
-
-        for pic_href in pic_hrefs:
-            driver.get(pic_href)
-            driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+        pic_hrefs = []
+        for i in range(1, scrolls):
             try:
-                driver.find_element_by_xpath("//span[@aria-label='Like']").click()
-                time.sleep(18)
-            except Exception as e:
+                driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
                 time.sleep(2)
+                hrefs = driver.find_elements_by_tag_name('a')
+                hrefs = [elem.get_attribute('href') for elem in hrefs if '/p/' in elem.get_attribute('href')]
+                [pic_hrefs.append(href) for href in hrefs if href not in pic_hrefs]
+            except Exception:
+                continue
+        return pic_hrefs
+
+        # write comment in area using a lambda function
+        def write_comment(self, comment_text):
+            try:
+                comment_button = lambda: self.driver.find_element_by_xpath("//span[@aria-label='Comment']")
+                comment_button.click()
+
+            except NoSuchElementException:
+                pass
+            
+            try:
+                comment_box_elem = lambda: self.driver.find_element_by_xpath("//textarea[@aria-label='Add a comment...']")
+                comment_box_elem.send_keys('')
+                comment_box_elem.clear()
+                for letter in comment_text:
+                    comment_box_elem().send_keys(letter)
+
+            except StaleElementReferenceException and NoSuchElementException as e:
+                print(e)
+                return False
+
+            
+
+
+        
+        
+        # pic_hrefs = [href for href in pic_hrefs if '/p/' in href]
+        # print(hashtag + ' photos: ' + str(len(pic_hrefs)))
+
+        # for pic_href in pic_hrefs:
+        #     driver.get(pic_href)
+        #     driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+        #     try:
+        #         driver.find_element_by_xpath("//span[@aria-label='Like']").click()
+        #         time.sleep(18)
+        #     except Exception as e:
+        #         time.sleep(2)
 
 
 testIG = InstragramBot(os.getenv('IG_USERNAME'), os.getenv('IG_PASSWORD'))
 testIG.login()
-testIG.like_photo("fitness")
+
+pictures_on_page = testIG.get_pics_on_page(hashtag='fitness', scrolls=3)[1:]
+print(pictures_on_page)
+
+testIG.driver.get('https://www.instagram.com/p/B4sOh17glDf/')
 
 hashtags = ['crossfit', 'fitnessmotivation','miramar']
+
+    # def like_photo(self, hashtag):
+    #     driver = self.driver
+    #     driver.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
+    #     time.sleep(2)
+    #     for i in range(1,3):
+    #         driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+    #         time.sleep(2)
+
+    #     #searching for pic link
+    #     hrefs = driver.find_elements_by_tag_name('a')
+    #     pic_hrefs = [elem.get_attribute('href') for elem in hrefs]
+    #     pic_hrefs = [href for href in pic_hrefs if '/p/' in href]
+    #     print(hashtag + ' photos: ' + str(len(pic_hrefs)))
+
+    #     for pic_href in pic_hrefs:
+    #         driver.get(pic_href)
+    #         driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+    #         try:
+    #             driver.find_element_by_xpath("//span[@aria-label='Like']").click()
+    #             time.sleep(18)
+    #         except Exception as e:
+    #             time.sleep(2)
