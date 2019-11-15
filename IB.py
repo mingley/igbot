@@ -30,11 +30,15 @@ class InstragramBot:
         user_name_element = driver.find_element_by_xpath("//input[@name='username']") 
         user_name_element.clear() #clears/deletes anything in the input field
         user_name_element.send_keys(self.username)
+        time.sleep(2)
         password_element = driver.find_element_by_xpath("//input[@name='password']")
         password_element.clear()
         password_element.send_keys(self.password)
-        password_element.send_keys(Keys.RETURN)
-        time.sleep(3)
+        time.sleep(2)
+        # password_element.send_keys(Keys.RETURN)
+        login_button = lambda: self.driver.find_element_by_xpath("//button[@type='submit']")
+        login_button().send_keys(Keys.RETURN)
+        time.sleep(2)
         
     def get_pics_on_page(self, hashtag, scrolls=int):
         driver = self.driver
@@ -99,6 +103,21 @@ class InstragramBot:
         if comment_text in self.driver.page_source:
             return True
         return False
+    
+    def get_comments(self):
+        time.sleep(3)
+
+        try:
+            comments_block = self.driver.find_elements_by_class_name('XQXOT')
+            print(comments_block)
+            comments_in_block = comments_block.find_elements_by_class_name('C4VMK')
+            comments = [x.find_elements_by_tag_name('span') for x in comments_in_block]
+            user_comment = re.sub(r'#.\w*', '', comments[0].text)
+
+        except NoSuchElementException:
+            return ''
+        return user_comment
+            
 
 
             
@@ -119,6 +138,7 @@ class InstragramBot:
         #         time.sleep(2)
 
 
+
 testIG = InstragramBot(os.getenv('IG_USERNAME'), os.getenv('IG_PASSWORD'))
 testIG.login()
 
@@ -127,7 +147,7 @@ testIG.login()
 time.sleep(3)
 testIG.driver.get('https://www.instagram.com/p/B4sOh17glDf/')
 time.sleep(3)
-testIG.post_comment('sup')
+print(testIG.get_comments())
 
 
 
