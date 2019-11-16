@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from chatterbot.trainers import ListTrainer
+from chatterbot import ChatBot
 
 import time
 import random
@@ -40,18 +42,24 @@ class InstragramBot:
         login_button().send_keys(Keys.RETURN)
         time.sleep(2)
         
-    def get_pics_on_page(self, hashtag, scrolls=int):
-        driver = self.driver
-        driver.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
+    def get_pictures_on_page(self, hashtag, scrolls=int):
+        self.driver.get("https://www.instagram.com/explore/tags/" + hashtag + "/")
         time.sleep(2)
+
+        # gathering photos
         pic_hrefs = []
         for i in range(1, scrolls):
             try:
-                driver.execute_script("window.scrollTo(0,document.body.scrollHeight);")
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(2)
-                hrefs = driver.find_elements_by_tag_name('a')
-                hrefs = [elem.get_attribute('href') for elem in hrefs if '/p/' in elem.get_attribute('href')]
-                [pic_hrefs.append(href) for href in hrefs if href not in pic_hrefs]
+                # get tags
+                hrefs_in_view = self.driver.find_elements_by_tag_name('a')
+                # finding relevant hrefs
+                hrefs_in_view = [elem.get_attribute('href') for elem in hrefs_in_view if
+                                 hashtag in elem.get_attribute('href')]
+                # building list of unique photos
+                [pic_hrefs.append(href) for href in hrefs_in_view if href not in pic_hrefs]
+                # print("Check: pic href length " + str(len(pic_hrefs)))
             except Exception:
                 continue
         return pic_hrefs
@@ -89,6 +97,7 @@ class InstragramBot:
         time.sleep(random.randint(1,5))
 
         comment_box_elem = self.write_comment(comment_text)
+
         if comment_text in self.driver.page_source:
             comment_box_elem().send_keys(Keys.ENTER)
             try:
@@ -105,18 +114,39 @@ class InstragramBot:
         return False
     
     def get_comments(self):
+
         time.sleep(3)
 
+        # comments = driver.find_elements_by_class_name("C4VMK")
+
+        # comments_list = []
+
+        # for c in comments:
+        #     comment = c.find_element_by_css_selector('span').get_attribute("textContent")
+        #     user = c.find_element_by_class_name("TlrDj").get_attribute("textContent")
+        #     print("" + user + ": " + str(comment))
+        #     comments_list.append(comment)
+
         try:
-            comments_block = self.driver.find_elements_by_class_name('XQXOT')
-            print(comments_block)
-            comments_in_block = comments_block.find_elements_by_class_name('C4VMK')
-            comments = [x.find_elements_by_tag_name('span') for x in comments_in_block]
-            user_comment = re.sub(r'#.\w*', '', comments[0].text)
+            comments_in_block = self.driver.find_elements_by_class_name("C4VMK")
+            user_comments = [x.find_element_by_css_selector('span').get_attribute('textContent') for x in comments_in_block]
 
         except NoSuchElementException:
             return ''
-        return user_comment
+
+        print(user_comments)
+        return user_comments
+
+
+    def comment_on_picture(self):
+        bot = ChatBot('Ron Obvious')
+        trainer = ListTrainer(bot)
+        picture_comment = self.get_comments()
+        response = bot.get_response(picture_comment)
+        print("users comment", picture_comment)
+        print("Bots reply", response)
+        return self.post_comment(response)
+
             
 
 
@@ -142,16 +172,11 @@ class InstragramBot:
 testIG = InstragramBot(os.getenv('IG_USERNAME'), os.getenv('IG_PASSWORD'))
 testIG.login()
 
-# pictures_on_page = testIG.get_pics_on_page(hashtag='fitness', scrolls=3)[1:]
-# print(pictures_on_page)
-time.sleep(3)
-testIG.driver.get('https://www.instagram.com/p/B4sOh17glDf/')
-time.sleep(3)
-print(testIG.get_comments())
-
-
-
-hashtags = ['crossfit', 'fitnessmotivation','miramar']
+for pic in testIG.get_pictures_on_page(hashtag='crossfit', scrolls=5)[1:]:
+    testIG.driver.get(pic)
+    time.sleep(3)
+    print('Posted Comment:', testIG.comment_on_picture())
+    time.sleep(3)
 
     # def like_photo(self, hashtag):
     #     driver = self.driver

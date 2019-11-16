@@ -1,2 +1,5 @@
 .env
 geckodriver.log
+db.sqlite3
+instagramcomments_.p
+sentence_tokenizer.pickle
